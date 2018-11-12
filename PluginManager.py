@@ -21,6 +21,7 @@ class PluginManager(type):
 
 
 
+    # 加载所有插件
     @staticmethod
     def LoadAllPlugin():
         pluginPath = PluginManager.__PluginPath
@@ -28,12 +29,15 @@ class PluginManager(type):
             raise EnvironmentError,'%s is not a directory'%pluginPath
         items = os.listdir(pluginPath)
         for item in items:
+            #递归加载所有子目录
             if os.path.isdir(os.path.join(pluginPath,item)):
                 PluginManager.__PluginPath = os.path.join(pluginPath,item)
                 PluginManager.LoadAllPlugin()
             else:
                 if item.endswith('.py') and item != '__init__.py':
+                    #文件名为模块名
                     moduleName = item[:-3]
+                    #防止和系统模块重复
                     if moduleName not in sys.modules:
                         fileHandle,filePath,dect = find_module(moduleName,[pluginPath])
                     try:
@@ -41,31 +45,32 @@ class PluginManager(type):
                     finally:
                         if fileHandle : fileHandle.close() 
 
-
+    #获取所有插件
     @property
     def AllPlugins(self):
         return self.__AllPlugins
-
+    #注册所有插件
     def RegisterAllPlugin(self,aPlugin):
         pluginName = '.'.join([aPlugin.__module__,aPlugin.__name__])
         pluginObj = aPlugin()
         #print 'plugin name is %s'%pluginName
         self.__AllPlugins[pluginName] = pluginObj
 
-
+    #取消某个插件
     def UnregisterPlugin(self,pluginName):
         if pluginName in self.__AllPlugins:
             pluginObj = self.__AllPlugins[pluginName]
             del pluginObj
 
 
-
+    #获取插件对象
     def GetPluginObject(self,pluginName = None):
         if pluginName is None:
             return self.__AllPlugins.values()
         else:
             result = self.__AllPlugins[pluginName] if pluginName in self.__AllPlugins else None
             return result
+    #根据插件名获取插件对象
     @staticmethod
     def GetPluginByName(pluginName):
         if pluginName is None:
